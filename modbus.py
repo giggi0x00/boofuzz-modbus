@@ -7,8 +7,8 @@ Modbus-TCP boofuzz python
 
 '''
 def main():
-	target_host = '192.168.0.15'
-	target_port = 502
+	target_host = '127.0.0.1'
+	target_port = 5555
 
 	# tcp_connection = SocketConnection(host=target_host, port=target_port, proto='tcp')
 	session = Session(
@@ -24,7 +24,7 @@ def main():
 		s_word(0x06,name='length')
 		s_byte(0xff,name='unit Identifier',fuzzable=False)
 		if s_block_start('read_coil_memory_block'):
-			s_byte(0x01,name='funcCode read coil memory')
+			s_byte(0x01,name='read_coil_memory')
 			s_word(0x0000,name='start address')
 			s_word(0x0000,name='quantity')
 			s_block_end('read_coil_memory_block')
@@ -166,7 +166,7 @@ def main():
 			s_dword(0x0000,name='byte_count')
 			s_size("outputsValue", length=8)
 			if s_block_start("outputsValue"):
-				s_word(0x00,name='outputsValue')
+				s_word(0x00,name='outputsValueWMC')
 				s_block_end()
 			s_block_end()
 		s_block_end()
@@ -199,7 +199,7 @@ def main():
 			s_size("outputsValue",length=16)
 			s_size("outputsValue", length=8)
 			if s_block_start("outputsValue"):
-				s_dword(0x0000,name='outputsValue')
+				s_dword(0x0000,name='outputsValueWMR')
 			s_block_end()
 		s_block_end()
 	s_block_end()
@@ -260,8 +260,8 @@ def main():
 			# s_size is record
 			s_size('recordData',length=16,name='recordLength')
 			if s_block_start("recordData"):
-				s_word(0x0000,name='recordData')
-			s_word(0x0000,name='recordLength')
+				s_word(0x0000,name='recordDataWFS')
+			s_word(0x0000,name='recordLengthWFS')
 		s_block_end()
 	s_block_end()
 
@@ -310,7 +310,7 @@ def main():
 			s_word(0x0000,name='writeStartingAddr')
 			s_size('writeQuantityRegisters',length=16,endian='>',name="writeQuantityRegisters")
 			s_size('writeQuantityRegisters', length=8, endian='>',name="byteCount",math=lambda x:2*x)
-			if s_block_start('writeQuantityRegisters'):
+			if s_block_start('writeQuantityRegistersRWMR'):
 				s_size('modbus_head',length=2)
 			s_block_end()
 		s_block_end()
@@ -326,7 +326,7 @@ def main():
 		
 
 
-	session.connect(s_get('modbus_read_coil_memory'))
+	session.connect(s_get('read_holding_registers'))
 	session.fuzz()
 
 if __name__ == '__main__':
