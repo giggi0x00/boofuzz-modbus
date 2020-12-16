@@ -15,8 +15,6 @@ def main():
 			target=Target(
 				connection=SocketConnection(target_host, target_port, proto='tcp')))
 
-
-
 	s_initialize("read_coil_memory")
 	if s_block_start("modbus_head"):
 		s_word(0x0001,name='transId',fuzzable=True)

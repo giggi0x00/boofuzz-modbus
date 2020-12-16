@@ -27,29 +27,128 @@ def crc16(data):
 
 
 def main():
+	#just for debugging
 	target_host = '127.0.01'
 	target_port = 5555
 
 	# tcp_connection = SocketConnection(host=target_host, port=target_port, proto='tcp')
-	session = Session(
-			target=Target(
-				connection=SocketConnection(target_host, target_port, proto='tcp')))
-
+	session = Session(sleep_time=2.000,receive_data_after_fuzz=True, target=Target(connection=SerialConnection(port="/dev/ttyACM0",baudrate=9600)))
 
 	s_initialize('read_holding_registers')
 	if s_block_start("modbus_head"):
 		s_byte(0xff,name='unit Identifier',fuzzable=False)
+
 		if s_block_start('read_holding_registers_block'):
 			s_byte(0x01,name='read_holding_registers')
 			s_word(0x0000,name='start address')
 			s_word(0x0000,name='quantity')
-		s_block_end("modbus_head")
-	s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
-	s_block_end('read_holding_registers_block')
+		s_block_end('read_holding_registers_block')
 
-	print(s_get('read_holding_registers'))
+	s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("modbus_head")
+
+	s_initialize("read_coil_memory")
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('read_coil_memory_block'):
+			s_byte(0x01,name='read_coil_memory')
+			s_word(0x0000,name='start address')
+			s_word(0x0000,name='quantity')
+		s_block_end('read_coil_memory_block')
+	s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("modbus_head")
+
+	s_initialize('ReadDiscreteInputs')
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('ReadDiscreteInputsRequest'):
+			s_byte(0x02,name='funcCode',fuzzable=False)
+			s_word(0x0000,name='start_address')
+			s_word(0x0000,name='quantity')
+		s_block_end('ReadDiscreteInputsRequest')
+		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("ReadDiscreteInputs")
+
+	s_initialize('WriteSingleCoil')
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('WriteSingleCoilRequest'):
+			s_byte(0x05,name='funcCode',fuzzable=False)
+			s_word(0x0000,name='start_address')
+			#s_word(0x0000,name='coil value')
+			s_random(value=str("\x00\x00"),name='coil value',min_length=4,max_length=100,num_mutations=500,fuzzable=True)
+		s_block_end('WriteSingleCoilRequest')
+		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("WriteSingleCoil")
+
+
+
+
+	s_initialize('WriteSingleRegister')
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('WriteSingleRegisterRequest'):
+			s_byte(0x06,name='funcCode',fuzzable=False)
+			s_word(0x0000,name='start_address')
+			#s_word(0x0000,name='coil value')
+			s_random(value=str("\x00\x00"),name='coil value',min_length=4,max_length=100,num_mutations=500,fuzzable=True)
+		s_block_end('WriteSingleRegisterRequest')
+		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("WriteSingleRegister")
+
+
+
+	s_initialize('WriteMultipleCoils')
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('WriteMultipleCoilsRequest'):
+			s_byte(0x0f,name='func_code',fuzzable=False)
+			s_word(0x0000,name='data address')
+			s_word(0x0000,name='number of coils')
+			s_size("outputsValue",fuzzable=False, length=1) #da non provare a randomizzare
+			if s_block_start("outputsValue"):
+				s_random(value=str("\x00"),name='outputsValueWMC',min_length=1,max_length=40,num_mutations=20,fuzzable=True)
+				s_block_end("outputsValue")
+		s_block_end("WriteMultipleCoilsRequest")
+		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("WriteMultipleCoils")
+
+	s_initialize('WriteMultipleRegisters')
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('WriteMultipleRRegisters'):
+			s_byte(0x10,name='func_code',fuzzable=False)
+			s_word(0xFDEF,name='data address',fuzzable=False)
+			s_word(0x0008,name='quantity',fuzzable=False)
+			s_size("byte_count",fuzzable=True, length=1) 
+			#s_word(0x10,name='size',fuzzable=False)
+			if s_block_start("byte_count"):
+				s_random(value=str("\x00"),name='byte_count_pwd',min_length=10,max_length=1000,num_mutations=100,fuzzable=True)
+				s_block_end("byte_count")
+		s_block_end("WriteMultipleRRegisters")
+		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("WriteMultipleRegisters")
+
+	s_initialize('Read_File_Record')
+	if s_block_start("modbus_head"):
+		s_byte(0xff,name='unit Identifier',fuzzable=False)
+		if s_block_start('Read_File_RecordR'):
+			s_byte(0x14,name='func_code',fuzzable=False)
+			s_word(0x07,name='byte_count',fuzzable=True)
+			s_word(0x00,name='sub',fuzzable=False)
+			s_word(0x0000,name='file_number',fuzzable=True)
+			s_word(0x0000,name='record_number',fuzzable=True)
+			s_word(0x0000,name='record_length',fuzzable=True)
+			#s_word(0x10,name='size',fuzzable=False)
+		s_block_end("Read_File_RecordR")
+		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
+	s_block_end("Read_File_Record")
+
 	
-	session.connect(s_get('read_holding_registers'))
+	session.connect(s_get('Read_File_Record'))
+
+
+
 	session.fuzz()
 
 if __name__ == '__main__':
