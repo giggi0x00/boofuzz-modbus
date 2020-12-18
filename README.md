@@ -1,5 +1,5 @@
 # boofuzz-modbus
-Based on modbus boofuzz-modbus but for RTU.
+Based on modbus boofuzz-modbus.
 
-Working on.. 
 
+Fuzzer for modbus over serial interface.
