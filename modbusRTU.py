@@ -64,7 +64,7 @@ def main():
 		if s_block_start('ReadDiscreteInputsRequest'):
 			s_byte(0x02,name='funcCode',fuzzable=False)
 			s_word(0x0000,name='start_address')
-			s_word(0x0000,name='quantity')
+			s_random(value=str("0x0000"),name='quantity',min_length=4,max_length=1000,num_mutations=100,fuzzable=True)
 		s_block_end('ReadDiscreteInputsRequest')
 		s_checksum("modbus_head",algorithm=crc16, fuzzable=False);
 	s_block_end("ReadDiscreteInputs")
@@ -136,7 +136,7 @@ def main():
 			s_byte(0x14,name='func_code',fuzzable=False)
 			s_word(0x07,name='byte_count',fuzzable=True)
 			s_word(0x00,name='sub',fuzzable=False)
-			s_word(0x0000,name='file_number',fuzzable=True)
+			s_random(value=str("0x0000"),name='byte_count_pwd',min_length=3,max_length=1000,num_mutations=100,fuzzable=True)
 			s_word(0x0000,name='record_number',fuzzable=True)
 			s_word(0x0000,name='record_length',fuzzable=True)
 			#s_word(0x10,name='size',fuzzable=False)
@@ -146,9 +146,8 @@ def main():
 
 	
 	session.connect(s_get('Read_File_Record'))
-
-
-
+	session.connect(s_get('WriteMultipleRegisters'))
+	session.connect(s_get('WriteMultipleCoils'))
 	session.fuzz()
 
 if __name__ == '__main__':
